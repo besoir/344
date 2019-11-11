@@ -1,0 +1,86 @@
+%fly takes four params
+%One: the cave defined by blocked rectangles
+%Two: the cave xbound ybound
+%Three: the starting ycoord
+%Four: the path
+
+cave([[0, 0, 2, 3], [2, 0, 1, 2], [3, 0, 3, 1], [6, 0, 1, 2], [7, 0, 1, 3], [8, 0, 4, 4], [9, 4, 3, 1], [10, 5, 2, 1], [0, 4, 6, 6], [3, 3, 3, 1], [4, 2, 1, 1], [6, 5, 1, 5], [7, 8, 1, 2], [8, 9, 3, 1], [11, 8, 1, 2]]).
+
+%second fly base case
+fly(_,[CAVEX,_],[CURRX,_],FINALPATH) :-
+	%if the currx is equal to the cavex then weve reached the other side of the cave
+	CURRX == CAVEX,
+
+	%write the path to the terminal
+	write(FINALPATH).
+
+%after the initial fly
+fly(CAVE,[CAVEX,CAVEY],[CURRX,CURRY],PATH) :-
+	%move the drone
+	move([CURRX,CURRY],[NEXTX,NEXTY]),
+
+	%make sure the drone moved to a valid position
+	cavevalid([NEXTX,NEXTY],CAVE),
+
+	%make sure the drone is in the cave
+	inCave([NEXTX,NEXTY],[CAVEX,CAVEY]),
+
+	%make sure that this coordinate is not a repeat
+	unused([NEXTX,NEXTY],PATH),
+
+	%update the path with the new coordinate
+	PATHUPDATE = [[NEXTX,NEXTY]|PATH],
+
+	%call again until weve reached the end of the cave
+	fly(CAVE,[CAVEX,CAVEY],[NEXTX,NEXTY],PATHUPDATE).
+
+
+%drone can move up, down, forward, backward.
+%move forward one
+move([A,B],[AFOR,B]) :- AFOR is A+1.
+
+%move up one
+move([A,B],[A,BUP]) :- BUP is B+1.
+
+%move down one
+move([A,B],[A,BDOWN]) :- BDOWN is B-1.
+
+%make sure the next move is not in a bound
+
+%the base case for the validity of the cave
+cavevalid([_,_],[]).
+
+%the regular method for checking the off-limits of the cave
+cavevalid([G,H],[HEAD|TAIL]) :-
+	%make sure that the point is not in the blocked part of the cave
+	not(in(HEAD,[G,H])),	
+	%call the method to check the next blocked rectangle in the cave
+	cavevalid([G,H],TAIL).
+
+%check if in cave
+inCave([A,B],[XCAVE,YCAVE]) :-
+	%make sure that the coordinates are not negative
+	A>=0, B>=0,
+
+	%make sure the coordinates are not outside the cave
+	A=<XCAVE, B=<YCAVE.
+
+
+%make sure the point move is in a rectangle
+in([SX,SY,XB,YB],[P,Q]) :-
+	%make sure it is greater than the smallest bounds
+	P>SX, Q>SY,
+	%make sure it is less than smallest + largest bound
+	P=<SX+XB, Q=<SY+YB.
+
+%makes sure that the drone isnt stuck in an infinite loop
+%the base case the path is empty
+unused([_,_],[]).
+
+%check the path and see if the point has been used before
+unused([C,D],[HEAD|TAIL]) :-
+	%make sure the point is not in head
+	[C,D] \= HEAD,
+
+	%call again but without the head because we just checked it
+	unused([C,D],TAIL).
